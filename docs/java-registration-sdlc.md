@@ -355,7 +355,7 @@ The multi-stage Java Docker build runs Maven tests for the selected module. The 
 
 ## 8. CI/CD and host deployment
 
-Jenkins CI is defined by the root `Jenkinsfile`. A configured Pipeline-from-SCM or Multibranch Pipeline job runs the checked-in pipeline on an agent with Node.js, Docker Engine/Compose, and access to a Docker daemon. The optional deployment stage uses Ansible only when explicitly selected on `main`; the agent needs Ansible and the stage installs the pinned `ansible.posix` collection.
+Jenkins CI is defined by the root `Jenkinsfile`. A configured Multibranch Pipeline job runs the checked-in pipeline on the `node-users-ci` agent label with Node.js, Docker Engine/Compose, and access to a Docker daemon. The optional deployment stage uses Ansible only when explicitly selected on `main`; the agent needs Ansible and the stage installs the pinned `ansible.posix` collection. Jenkins injects the `node-users-deploy-key` SSH credential and `node-users-production-inventory` secret-file credential; neither is stored in source control.
 
 The Ansible playbook targets a pre-provisioned host and uses rsync to transfer the checked-out application source. It excludes environment files and build/dependency directories, validates the host's `.env`, runs Compose build/up, and checks application/gateway readiness. It preserves Docker volumes. The target host, `.env`, SSH key, and firewall are managed by the operator. Terraform is intentionally not included: no cloud provider, account, network design, or budget was selected, and the existing Compose deployment does not require cloud provisioning.
 

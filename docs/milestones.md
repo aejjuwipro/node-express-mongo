@@ -18,6 +18,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `530bd64` | Java registration microservice and API Gateway | Add email/mobile registration, Redis HMAC challenges, Kafka notification delivery, Mailpit, configurable SMS adapter, Java observability, and architecture/SDLC documentation. |
 | `24c2617` | Jenkins CI pipeline | Validate Compose and Node source, build/test Node and Java images, then smoke-test an isolated full stack, OTP replay protection, shared JWT interoperability, and Prometheus. |
 | `b609c6b` | Ansible host deployment | Synchronize source without secrets, validate remote Compose configuration, build/start the full stack, and verify Node/Gateway readiness while preserving data volumes. |
+| Pending commit | Jenkins/Ansible quickstart procedures | Document controller/agent setup, CI runs, remote-host preparation, Jenkins secret credentials, manual Ansible deployment, and the protected inventory flow. |
 
 ## Corrections to retain
 

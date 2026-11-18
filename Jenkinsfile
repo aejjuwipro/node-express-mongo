@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'node-users-ci'
+    }
 
     options {
         timestamps()
@@ -11,12 +13,7 @@ pipeline {
         booleanParam(
             name: 'DEPLOY',
             defaultValue: false,
-            description: 'Deploy from the main branch to the Ansible inventory configured below.'
-        )
-        string(
-            name: 'ANSIBLE_INVENTORY',
-            defaultValue: 'ansible/inventory/production.ini',
-            description: 'Untracked inventory file containing the approved deployment host.'
+            description: 'Deploy from the main branch using the protected Jenkins inventory and SSH credentials.'
         )
     }
 
@@ -75,15 +72,21 @@ pipeline {
                 withCredentials([
                     sshUserPrivateKey(
                         credentialsId: 'node-users-deploy-key',
-                        keyFileVariable: 'ANSIBLE_PRIVATE_KEY'
+                        keyFileVariable: 'ANSIBLE_PRIVATE_KEY',
+                        usernameVariable: 'ANSIBLE_SSH_USER'
+                    ),
+                    file(
+                        credentialsId: 'node-users-production-inventory',
+                        variable: 'ANSIBLE_INVENTORY_FILE'
                     )
                 ]) {
                     sh '''
                         set -eu
-                        test -f "$ANSIBLE_INVENTORY"
+                        test -f "$ANSIBLE_INVENTORY_FILE"
                         ansible-playbook \
-                          -i "$ANSIBLE_INVENTORY" \
+                          -i "$ANSIBLE_INVENTORY_FILE" \
                           --private-key "$ANSIBLE_PRIVATE_KEY" \
+                          -e "ansible_user=$ANSIBLE_SSH_USER" \
                           ansible/deploy.yml
                     '''
                 }

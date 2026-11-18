@@ -136,32 +136,85 @@ For failure checks and previously corrected configuration errors, see [Milestone
 
 ## CI with Jenkins
 
-The root [Jenkinsfile](../Jenkinsfile) is the CI entry point. Configure a Jenkins **Multibranch Pipeline** or **Pipeline from SCM** job to load this repository's `Jenkinsfile`; configure a webhook or SCM polling on that job if automatic runs on pushes are required. The Jenkins installation needs the Pipeline and Git plugins. For the gated deploy stage, also install Credentials Binding and SSH Credentials. The Jenkins agent must have:
+The [Jenkinsfile](../Jenkinsfile) contains CI and an opt-in Ansible deployment stage. Jenkins itself is not part of Docker Compose. Use an existing controller or start a local controller as below; its builds must run on a separate, trusted Docker-capable agent. No cloud account, registry, SMS subscription, or paid CI service is required.
 
-- Node.js 20 or later.
-- Docker Engine and Docker Compose v2.24 or later, with access to the daemon.
-- For the optional deployment stage only: Ansible; the stage installs the pinned `ansible.posix` collection.
+### A. Configure Jenkins CI
 
-The agent workspace must be available to its Docker daemon at the same absolute path because the Compose stack uses bind-mounted configuration files. The pipeline validates Compose and Node syntax, builds the application and Java images (the Java Docker builds run Maven tests), then starts a separate full Compose stack on CI-only loopback ports. Its smoke test checks service health, gateway routes, mobile OTP single-use, Java-issued JWT acceptance by Node, and Prometheus scrape targets. Post-build cleanup removes only the CI project's containers, network, and named volumes.
+1. **Start a Jenkins controller if you do not already have one.** For a local-only controller, create persistent storage and bind its web UI to loopback:
 
-`ci/compose.env` contains deliberately disposable fixture values. They are not production credentials and must never be copied into `.env` or used for deployment. No cloud account, registry, SMS subscription, or paid CI service is required for these checks. CI does require Docker daemon access, which is equivalent to host-level control; only run trusted pipeline code on a dedicated, access-controlled Jenkins agent.
+   ```sh
+   docker volume create jenkins_home
+   docker run -d --name jenkins-controller --restart unless-stopped \
+     -p 127.0.0.1:8088:8080 \
+     -v jenkins_home:/var/jenkins_home \
+     jenkins/jenkins:lts-jdk21
+   ```
 
-The `DEPLOY` Jenkins parameter is off by default and only deploys from the `main` branch when explicitly enabled. Configure the `node-users-deploy-key` SSH credential in Jenkins; keep the actual host inventory in the ignored `ansible/inventory/production.ini`. Deployment does not provision cloud infrastructure or publish images to a registry.
+   Open <http://localhost:8088>, retrieve the one-time unlock password with `docker exec jenkins-controller cat /var/jenkins_home/secrets/initialAdminPassword`, and complete the setup wizard. Keep the controller private; terminate TLS and enforce authentication if remote access is needed. This controller image is only the control plane; do not give it the Docker socket.
+2. **Install plugins.** Ensure Jenkins has Pipeline and Git. For optional deployment, add Credentials Binding and SSH Credentials. If Jenkins will launch the build agent over SSH, also install SSH Build Agents.
+3. **Prepare a dedicated Linux agent.** In **Manage Jenkins → Nodes → New Node**, create a permanent node, set a remote root directory, set its label to exactly `node-users-ci`, and assign one executor. Launch it using your approved SSH or inbound-agent method; configure the corresponding node credential and verify SSH host keys when using SSH. Install Java 21 for Jenkins Remoting, Node.js 20+, Docker Engine, and Docker Compose v2.24+. For deployment, install Ansible and `rsync` too. The agent’s checkout workspace must be visible to its Docker daemon at the same absolute path because Compose bind-mounts configuration files.
+4. **Secure the agent.** Docker daemon access is effectively host-level privilege. Use a dedicated, access-controlled agent, do not expose its Docker socket, and only run trusted repository code. The Jenkins controller and agent may be separate hosts, but the Docker daemon must see the agent workspace path.
+5. **Make the repository available.** Push this repository to a Git remote reachable by Jenkins. If it is private, configure a read-only SCM credential in Jenkins, not in the repository.
+6. **Create a Multibranch Pipeline job.** Add the repository as the branch source, discover `main`, and set the script path to `Jenkinsfile` at the repository root. Configure a webhook or SCM polling if builds should start automatically when commits arrive.
+7. **Run a `main` branch build with `DEPLOY` unchecked.** The pipeline validates Compose and Node syntax, builds Node and Java images (Maven tests run inside the Java builds), and starts an isolated full Compose stack. Smoke checks cover health, gateway routing, OTP single-use, Java-issued JWT acceptance by Node, and Prometheus targets. The `post` cleanup removes only this CI run’s containers, network, and named volumes.
+8. **Review the result.** All stages through “Compose integration smoke test” must pass before enabling deployment. CI uses separate loopback ports and project-scoped volumes, so it does not touch the normal development stack.
 
-### Ansible host deployment
+`ci/compose.env` contains disposable test fixtures only. Never copy these values into a deployment `.env`. The pipeline does not publish images to a registry.
 
-The Ansible playbook deploys source to an already provisioned Linux host with Docker Compose v2 and `rsync`. It does not install Docker, create a cloud VM, or change firewall rules. Prepare a dedicated remote directory (default: `~/node-users`), create its `.env` from `.env.example`, and edit that file with deployment-specific secrets before running deployment. The playbook transfers source while excluding `.env`, `.env.*`, `.git`, `node_modules`, and Java build output; it validates Compose, builds and starts the stack, then waits for Node and Gateway health. It deliberately does not delete Compose volumes.
+### B. Prepare an Ansible deployment host
 
-Install the required Ansible collection and create an untracked inventory:
+The host must already be provisioned; the playbook does not install Docker, create cloud resources, or change firewall rules.
+
+1. Install Docker Engine, Docker Compose v2, and `rsync` on the Linux host.
+2. Create a deployment user that can SSH in, run Docker commands, and write to `~/node-users`. Verify the SSH host key out of band and add the verified key to the Jenkins agent’s `known_hosts`; host-key checking remains enabled.
+3. Create the remote deployment directory and seed its environment file once. From the repository root, replace `DEPLOY_USER` and `DEPLOY_HOST` with the approved values:
+
+   ```sh
+   ssh "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p "$HOME/node-users" && chmod 750 "$HOME/node-users"'
+   scp .env.example "$DEPLOY_USER@$DEPLOY_HOST:node-users/.env.example"
+   ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+     'cd "$HOME/node-users" && if [ ! -e .env ]; then cp .env.example .env; fi && chmod 600 .env'
+   ssh -t "$DEPLOY_USER@$DEPLOY_HOST" 'vi "$HOME/node-users/.env"'
+   ```
+
+   Replace the example MongoDB credentials, `JWT_SECRET`, `OTP_HMAC_SECRET`, and Grafana password with deployment-specific values. Keep values out of shell history and logs. Leave mock OTP exposure off outside local development; configure real notification providers only after their contracts and credentials are validated. Do not overwrite an existing deployment `.env` during upgrades.
+4. Review network exposure before deployment. `docker-compose.yml` publishes application and database ports; firewall off MongoDB/Mongo Express and restrict all admin/monitoring interfaces to trusted networks. Use TLS and an approved ingress/reverse proxy before public access.
+
+### C. Configure Jenkins deployment credentials
+
+1. Create a local inventory from the example:
+
+   ```sh
+   cp ansible/inventory/hosts.example.ini ansible/inventory/production.ini
+   chmod 600 ansible/inventory/production.ini
+   ```
+
+2. Edit the host and SSH username in `ansible/inventory/production.ini`. The example address `192.0.2.10` is documentation-only and must be replaced. Do not add a private key or `.env` values to this file. For manual Ansible commands, the inventory's `ansible_user` is used; Jenkins uses the SSH credential's username.
+3. In Jenkins Credentials, create:
+   - **SSH Username with private key**, ID `node-users-deploy-key`; set the username and key permitted on the host. The pipeline passes this username to Ansible.
+   - **Secret file**, ID `node-users-production-inventory`; upload the reviewed `production.ini`.
+4. Keep `production.ini` local/ignored for manual use. Scope both Jenkins credentials to the deployment job/folder; the inventory is injected as a temporary credential file and is never committed or expected in a checkout.
+
+### D. Deploy through Jenkins or run Ansible manually
+
+1. Ensure the `main` branch build is green. After the first pipeline run, Jenkins exposes its declared `DEPLOY` parameter in **Build with Parameters**.
+2. Start a new `main` branch build and explicitly set the `DEPLOY` parameter to `true`. The stage installs the pinned `ansible.posix` collection and uses the two Jenkins credentials above. With `DEPLOY=false` (the default), no remote changes are made. Jenkins only enables this stage on `main`.
+3. Confirm the deploy stage succeeds. It synchronizes source while excluding `.env`, `.env.*`, `.git`, dependencies, and Java build output; checks the existing `.env`; applies mode `0600`; validates Compose; builds/starts the stack; and waits for Node/Gateway health. It does not delete persistent Docker volumes.
+4. On the host, verify `docker compose --project-name node-users --env-file .env ps`, `http://localhost:3001/health/ready`, and `http://localhost:3003/actuator/health`. Check the Prometheus targets and Grafana dashboards as described above.
+
+For a manual deployment from a trusted Ansible controller, install Ansible Core in a Python virtual environment (Python 3.11+), install the pinned collection, then:
 
 ```sh
+python3 -m venv "$HOME/.venvs/node-users-ansible"
+. "$HOME/.venvs/node-users-ansible/bin/activate"
+python -m pip install 'ansible-core==2.18.6'
 ansible-galaxy collection install -r ansible/requirements.yml
-cp ansible/inventory/hosts.example.ini ansible/inventory/production.ini
-# Replace the reserved example host with an approved host; configure SSH key access outside the inventory.
-ansible-playbook \
-  -i ansible/inventory/production.ini \
-  --private-key /secure/path/to/deployment-key \
-  ansible/deploy.yml
+ansible app_hosts -i ansible/inventory/production.ini \
+  --private-key /secure/path/to/deployment-key -m ping
+ansible-playbook --syntax-check \
+  -i ansible/inventory/production.ini ansible/deploy.yml
+ansible-playbook -i ansible/inventory/production.ini \
+  --private-key /secure/path/to/deployment-key ansible/deploy.yml
 ```
 
-The example inventory uses the documentation-only address `192.0.2.10` and is not deployable as-is. The SSH user must be able to run Docker commands and the host must already have Docker Engine, Compose v2, and rsync. Keep SSH host-key verification enabled. Never put SSH private keys or production `.env` contents in Git/Jenkinsfile; provide the key through Jenkins credentials or an external secret store. A remote deployment exposes services according to `docker-compose.yml`, so firewall and network policy must be reviewed before use.
+The Ansible controller/agent also needs `rsync`; the remote host needs `rsync` as well. Add the virtual environment's `bin` directory to the Jenkins deployment agent's `PATH` so the pipeline can find `ansible-playbook` and `ansible-galaxy`. The example inventory uses the reserved documentation address `192.0.2.10`; it is not deployable as-is. Store private keys and production `.env` values outside Git and keep the host firewall restrictive. Terraform is not included because no cloud provider, account, budget, or infrastructure target was selected.

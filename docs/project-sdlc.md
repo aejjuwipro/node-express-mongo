@@ -60,7 +60,7 @@ Before calling a code milestone complete:
 5. For authentication changes, verify both success and failure cases, including invalid input, OTP replay/expiry behavior, and authenticated profile access.
 6. Confirm the working tree contains no `.env` or other secrets before committing.
 
-The [Jenkinsfile](../Jenkinsfile) validates Compose and Node syntax, builds the Node/Java images (Java Maven tests run inside those builds), then starts an isolated Compose project and checks health, route behavior, OTP single-use, Java-to-Node JWT interoperability, and Prometheus targets. It tears down only its uniquely named CI volumes. Jenkins agents need Node.js 20+, Docker Engine access, and Docker Compose v2.24+; Docker daemon access is privileged and should be restricted to trusted repositories.
+The [Jenkinsfile](../Jenkinsfile) targets the Jenkins agent label `node-users-ci`. It validates Compose and Node syntax, builds the Node/Java images (Java Maven tests run inside those builds), then starts an isolated Compose project and checks health, route behavior, OTP single-use, Java-to-Node JWT interoperability, and Prometheus targets. It tears down only its uniquely named CI volumes. Jenkins agents need Node.js 20+, Docker Engine access, and Docker Compose v2.24+; Docker daemon access is privileged and should be restricted to trusted repositories.
 
 The pipeline's optional `DEPLOY` stage is gated to the `main` branch and requires explicit opt-in. It invokes [Ansible](../ansible/deploy.yml) with a host inventory and SSH key supplied outside source control. The playbook deploys to an existing Docker host; it does not provision infrastructure, install Docker, expose cloud resources, or remove persistent Compose volumes.
 
