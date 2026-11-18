@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: java-registration
+          uri: ${REGISTRATION_SERVICE_URL:http://registration-service:8080}
+          predicates:
+            - Path=/auth/**
+        - id: node-users
+          uri: ${NODE_SERVICE_URL:http://app:3001}
+          predicates:
+            - Path=/node/**
+          filters:
+            - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: api-gateway

@@ -1,6 +1,6 @@
 # Node Users
 
-Node Users is an Express and MongoDB user application with email/password authentication, development-only OTP/contact verification, editable profile names and contacts, authenticated password changes, and browser login and registration pages.
+Node Users is an Express and MongoDB user application with email/password authentication, development-only OTP/contact verification, editable profile names and contacts, authenticated password changes, and browser login and registration pages. It also includes a Java/Spring registration microservice with email/mobile verification, Redis challenges, Kafka notifications, and an API Gateway.
 
 ## Start here
 
@@ -11,6 +11,7 @@ Node Users is an Express and MongoDB user application with email/password authen
    - After signing in, the app opens the dashboard at <http://localhost:3001/dashboard>.
 3. Read the [milestone history and correction log](docs/milestones.md) before changing previously troublesome configuration.
 4. Follow the [project SDLC](docs/project-sdlc.md) for implementation and verification expectations.
+5. See the [Java Registration SDLC and architecture](docs/java-registration-sdlc.md) for requirements, HLD/LLD, flows, diagrams, operations, and production caveats.
 
 ## Application structure
 
@@ -23,6 +24,7 @@ Node Users is an Express and MongoDB user application with email/password authen
 - `public/`: browser UI.
 - `docker-compose.yml`: local app, MongoDB, and Mongo Express services.
 - `observability/`: OpenTelemetry Collector, Prometheus, Loki, Tempo, and Grafana provisioning.
+- `java-registration/`: Java 21 registration service and Spring Cloud API Gateway.
 
 ## API overview
 
@@ -44,6 +46,12 @@ Node Users is an Express and MongoDB user application with email/password authen
 
 Use `/health/live` for liveness checks and `/health/ready` for readiness checks.
 
+## Java registration service
+
+The gateway is available at <http://localhost:3003>. It routes `/auth/**` to Java and `/node/**` to the Node API after removing the `/node` prefix. Java registration supports email verification and mobile OTP; the default local SMS provider exposes a mock code, and email is captured by Mailpit at <http://localhost:8025>. Java-created verified accounts share the Node MongoDB `users` collection and JWT signing secret.
+
+Build/restart the Java services with `docker compose up -d --build registration-service api-gateway`. See [Java Registration SDLC and architecture](docs/java-registration-sdlc.md) before configuring providers. The Airtel adapter is configurable but not validated against a real Airtel tenant contract; do not enable production delivery until the tenant API/authentication/payload requirements are confirmed.
+
 ## Monitoring and observability
 
 The Node.js OpenTelemetry SDK auto-instruments HTTP, Express, MongoDB, and runtime activity. Application request metrics and structured application logs also use OpenTelemetry APIs. OTLP signals flow through the Collector:
@@ -57,7 +65,7 @@ Open Grafana at <http://localhost:3002> (default local username/password: `admin
 
 Set `OTEL_ENABLED=false` in `.env` to disable SDK export from the app. The configured stack uses local filesystem volumes, a 15-day Prometheus retention, seven-day Loki retention, and 48-hour Tempo retention; it is intended for development, not highly available production deployment.
 
-Mobile OTP and contact verification use development mocks: the generated code is returned to the dashboard/API and is not sent by SMS or email. Contact verification codes expire after five minutes, have a 60-second resend cooldown, and are limited to five attempts. Do not use these providers for production. See [Quickstart](docs/quickstart.md) for setup and [Milestones](docs/milestones.md) for known corrections.
+Node mobile OTP and contact verification use development mocks: the generated code is returned to the dashboard/API and is not sent by SMS or email. Contact verification codes expire after five minutes, have a 60-second resend cooldown, and are limited to five attempts. Java mobile OTP is mock by default locally; Java email is delivered to Mailpit. Do not use local mocks for production. See [Quickstart](docs/quickstart.md), [Java Registration SDLC and architecture](docs/java-registration-sdlc.md), and [Milestones](docs/milestones.md).
 
 ## Contributions and changes
 

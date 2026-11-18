@@ -2,4 +2,5 @@
 .env.*
 !.env.example
 node_modules/
+**/target/
 npm-debug.log

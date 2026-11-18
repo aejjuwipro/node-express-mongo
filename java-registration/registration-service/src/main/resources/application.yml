@@ -1,0 +1,89 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: registration-service
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://mongo:27017/nodeusers}
+      auto-index-creation: false
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: registration-notification-delivery
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.nodeusers.registration.notifications
+        spring.json.value.default.type: com.nodeusers.registration.notifications.NotificationEvent
+        spring.json.use.type.headers: false
+  mail:
+    host: ${SMTP_HOST:mailpit}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: registration-service
+    enable:
+      kafka: false
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+app:
+  public-base-url: ${REGISTRATION_PUBLIC_BASE_URL:http://localhost:3003}
+  jwt:
+    secret: ${JWT_SECRET:}
+  otp:
+    hmac-secret: ${OTP_HMAC_SECRET:${JWT_SECRET:}}
+    ttl: 5m
+    email-ttl: 15m
+    resend-cooldown: 60s
+    max-attempts: 5
+    expose-code: ${OTP_EXPOSE_CODE:false}
+  sms:
+    provider: ${SMS_PROVIDER:mock}
+    airtel-api-url: ${AIRTEL_SMS_API_URL:}
+    airtel-auth-header: ${AIRTEL_SMS_AUTH_HEADER:Authorization}
+    airtel-auth-scheme: ${AIRTEL_SMS_AUTH_SCHEME:Bearer}
+    airtel-auth-value: ${AIRTEL_SMS_AUTH_VALUE:}
+    airtel-customer-id: ${AIRTEL_SMS_CUSTOMER_ID:}
+    airtel-sender-id: ${AIRTEL_SMS_SENDER_ID:}
+    airtel-template-id: ${AIRTEL_SMS_TEMPLATE_ID:}
+  email:
+    from: ${EMAIL_FROM:no-reply@node-users.local}
+  kafka:
+    notification-topic: registration.notifications

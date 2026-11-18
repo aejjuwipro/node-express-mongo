@@ -1,6 +1,6 @@
 # Project SDLC
 
-This document defines the lightweight development lifecycle for this repository. It reflects the current Docker-based project and does not assume a CI pipeline is configured.
+This document defines the lightweight development lifecycle for this repository. It reflects the current Docker-based Node.js and Java project and does not assume a CI pipeline is configured. The Java service's detailed architecture, API contracts, diagrams, provider caveats, and operations are documented in [Java Registration SDLC and architecture](java-registration-sdlc.md).
 
 ## 1. Scope and requirements
 
@@ -16,6 +16,10 @@ This document defines the lightweight development lifecycle for this repository.
 - Keep HTTP routes and request middleware in `src/routes/` and `src/middleware/`.
 - Keep Express setup in `src/app.js`; keep `server.js` limited to startup orchestration.
 - Keep static browser files under `public/`.
+- Keep Java registration modules under `java-registration/`; separate gateway routing, API/controller, business service, persistence, security, and notification adapter responsibilities.
+- Treat the shared Mongo `users` collection and JWT secret as a cross-service contract; review Node compatibility when either changes.
+- Keep Java verification codes HMAC-hashed in Redis and notification delivery asynchronous through Kafka. Do not log codes or message bodies.
+- Do not describe the configurable Airtel adapter as production-verified until it passes tests against the actual tenant contract.
 - Do not commit `.env`, credentials, generated OTPs, or other secrets.
 
 ## 3. Implementation
@@ -55,6 +59,8 @@ Before calling a code milestone complete:
 5. For authentication changes, verify both success and failure cases, including invalid input, OTP replay/expiry behavior, and authenticated profile access.
 6. Confirm the working tree contains no `.env` or other secrets before committing.
 
+For Java changes, also rebuild both modules (`docker compose up -d --build registration-service api-gateway`), check their health and Prometheus targets, and test the relevant registration/verification flow. The Docker build executes Maven tests.
+
 Documentation-only changes do not require a Docker rebuild. Update the quickstart and correction log whenever setup steps or known failure modes change.
 
 ## 5. Release and operations
@@ -68,4 +74,5 @@ Documentation-only changes do not require a Docker rebuild. Update the quickstar
 
 - Replace the mock OTP adapter with a real SMS gateway before production deployment.
 - Add production hardening (rate limiting, secure token/session policy, TLS, least-privilege network exposure, and operational health checks) before exposing the service publicly.
+- Validate the Airtel tenant API/authentication/payload mapping and secure Kafka/Redis before production use.
 - Add automated tests/CI when the project adopts a test runner and pipeline.

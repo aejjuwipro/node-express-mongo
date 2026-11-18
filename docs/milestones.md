@@ -15,6 +15,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `585bdce` | Configurable debug logging and observability | Add the `DEBUG` switch, Prometheus metrics, health endpoints, and Docker readiness checks. |
 | `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
 | `2f40bc0` | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
+| Pending commit | Java registration microservice and API Gateway | Add email/mobile registration, Redis HMAC challenges, Kafka notification delivery, Mailpit, configurable SMS adapter, Java observability, and architecture/SDLC documentation. |
 
 ## Corrections to retain
 
@@ -62,6 +63,15 @@ This log records the implemented milestones, their commits, and fixes that shoul
 - **Failure:** Application logs appeared in container stdout but Loki had no records because the app used the separate `@opentelemetry/api-logs` global API instead of the API package used by the SDK.
 - **Correction:** Import `logs` and `SeverityNumber` from `@opentelemetry/api`, configure `BatchLogRecordProcessor` with its exporter option, then confirm Loki entries include trace IDs that resolve in Tempo.
 - **Do not repeat:** Seeing stdout logs does not prove OTLP log export is working; verify records in Loki and trace/log correlation end to end.
+
+### Java registration and provider integration
+
+- The Java service is routed through host port `3003`; `/auth/**` goes to Java and `/node/**` reaches Node after stripping the prefix. Node remains on `3001`.
+- Java shares MongoDB `users` and the JWT signing secret with Node. Pending email registrations are isolated in `java_registration_pending` until verified.
+- Redis stores keyed challenge digests with expiry, cooldown, and attempt controls; Kafka transports email/SMS delivery events with retries and a dead-letter topic.
+- Local SMS is a mock provider and local email is captured by Mailpit (`8025`). Mock verification code disclosure must remain development-only.
+- The Airtel adapter is configuration-driven, but no real tenant contract was available for validation. A passing mock HTTP test proves only the configured request mapping, not live Airtel API compatibility.
+- Java observability uses the existing Collector, Prometheus, Tempo, Loki, and Grafana stack. The `registration-service` and `registration-api-gateway` scrape targets should both be `UP`.
 
 ### Startup and database indexes
 
