@@ -19,7 +19,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `24c2617` | Jenkins CI pipeline | Validate Compose and Node source, build/test Node and Java images, then smoke-test an isolated full stack, OTP replay protection, shared JWT interoperability, and Prometheus. |
 | `b609c6b` | Ansible host deployment | Synchronize source without secrets, validate remote Compose configuration, build/start the full stack, and verify Node/Gateway readiness while preserving data volumes. |
 | `921bcfa` | Jenkins/Ansible quickstart procedures | Document controller/agent setup, CI runs, remote-host preparation, Jenkins secret credentials, manual Ansible deployment, and the protected inventory flow. |
-| Pending commit | Jenkins endpoint and readiness guidance | Match the quickstart to the active local Jenkins port and distinguish an authenticated controller from an unauthenticated 403 response. |
+| `98f4d3e` | Jenkins endpoint and readiness guidance | Match the quickstart to the active local Jenkins port and distinguish an authenticated controller from an unauthenticated 403 response. |
 
 ## Corrections to retain
 
