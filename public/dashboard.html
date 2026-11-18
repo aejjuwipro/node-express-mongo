@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172a">
+  <title>Dashboard | Node Users</title>
+  <link rel="stylesheet" href="/auth.css">
+  <link rel="stylesheet" href="/dashboard.css">
+  <script src="/dashboard.js" defer></script>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <header class="dashboard-header">
+      <a class="brand" href="/dashboard">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>Node Users</span>
+      </a>
+      <button class="secondary-button sign-out" type="button" data-sign-out>Sign out</button>
+    </header>
+
+    <main>
+      <section class="dashboard-card" aria-labelledby="page-title">
+        <div class="eyebrow">ACCOUNT OVERVIEW</div>
+        <h1 id="page-title">Dashboard</h1>
+        <p class="intro">You are signed in. Manage your profile, contacts, password, and items below.</p>
+        <p class="dashboard-message" data-account-status role="status" aria-live="polite">Loading your account…</p>
+        <dl class="account-details" data-account-details hidden>
+          <div><dt>Name</dt><dd data-user-name></dd></div>
+          <div><dt>Email</dt><dd data-user-email></dd><dd class="contact-status" data-email-status></dd></div>
+          <div><dt>Mobile</dt><dd data-user-mobile></dd><dd class="contact-status" data-mobile-status></dd></div>
+        </dl>
+      </section>
+
+      <section class="dashboard-card management-card" aria-labelledby="profile-title">
+        <div class="eyebrow">PROFILE</div>
+        <h2 id="profile-title">Edit your details</h2>
+        <p class="section-hint">Email and mobile changes are applied only after verifying the new contact.</p>
+        <form class="auth-form" data-profile-form>
+          <label for="profile-name">Name</label>
+          <input id="profile-name" name="name" type="text" maxlength="80" autocomplete="name" required>
+          <button class="primary-button" type="submit">Save profile</button>
+          <p class="form-message" data-profile-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="dashboard-card management-card" aria-labelledby="contact-title">
+        <div class="eyebrow">CONTACT VERIFICATION</div>
+        <h2 id="contact-title">Change email or mobile</h2>
+        <p class="section-hint">For development, the mock code appears here and is not sent by email or SMS. Codes expire in five minutes.</p>
+        <form class="auth-form" data-contact-request-form>
+          <label for="contact-channel">Contact type</label>
+          <select id="contact-channel" name="channel">
+            <option value="email">Email</option>
+            <option value="mobile">Mobile</option>
+          </select>
+          <label for="contact-value" data-contact-value-label>Email address</label>
+          <input id="contact-value" name="value" type="email" autocomplete="email" placeholder="you@example.com" required>
+          <button class="secondary-button" type="submit">Request verification code</button>
+          <p class="form-message" data-contact-request-status role="status" aria-live="polite"></p>
+        </form>
+        <form class="auth-form contact-verify-form" data-contact-verify-form hidden>
+          <p class="section-hint" data-contact-pending></p>
+          <label for="contact-code">Six-digit verification code</label>
+          <input id="contact-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+          <button class="primary-button" type="submit">Verify and update contact</button>
+          <button class="secondary-button" type="button" data-cancel-contact>Cancel</button>
+          <p class="form-message" data-contact-verify-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="dashboard-card management-card" aria-labelledby="password-title" data-password-card hidden>
+        <div class="eyebrow">SECURITY</div>
+        <h2 id="password-title">Change password</h2>
+        <p class="section-hint">Enter your current password and choose a new password with at least 8 characters.</p>
+        <form class="auth-form" data-password-form>
+          <label for="current-password">Current password</label>
+          <input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+          <label for="new-password">New password</label>
+          <input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" required>
+          <label for="confirm-password">Confirm new password</label>
+          <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required>
+          <button class="primary-button" type="submit">Update password</button>
+          <p class="form-message" data-password-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+      <p class="dashboard-message" data-password-unavailable hidden>Mobile-only accounts sign in with OTP and do not have a password to change.</p>
+
+      <section class="dashboard-card items-card" aria-labelledby="items-title">
+        <div class="items-heading">
+          <div>
+            <div class="eyebrow">YOUR WORKSPACE</div>
+            <h2 id="items-title">Items</h2>
+          </div>
+          <span class="item-count" data-item-count></span>
+        </div>
+        <p class="dashboard-message" data-items-status role="status" aria-live="polite">Loading items…</p>
+        <ul class="item-list" data-item-list></ul>
+      </section>
+    </main>
+    <footer>Node Users account dashboard</footer>
+  </div>
+</body>
+</html>

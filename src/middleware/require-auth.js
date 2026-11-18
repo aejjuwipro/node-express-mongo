@@ -21,7 +21,7 @@ const requireAuth = async (req, res, next) => {
 
   try {
     const user = await User.findById(payload.sub)
-      .select('_id name email mobile mobileVerifiedAt');
+      .select('_id name email emailVerifiedAt mobile mobileVerifiedAt');
     if (!user) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }

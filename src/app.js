@@ -41,6 +41,10 @@ app.get('/registration', (req, res) => {
   res.sendFile(path.join(publicDirectory, 'registration.html'));
 });
 
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(publicDirectory, 'dashboard.html'));
+});
+
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/items', itemRoutes);

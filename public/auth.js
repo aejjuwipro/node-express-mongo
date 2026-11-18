@@ -47,9 +47,7 @@ document.querySelectorAll('[data-email-auth]').forEach((form) => {
     try {
       const result = await postJson(`/auth/${mode}`, body);
       saveAuthentication(result);
-      setMessage(form, mode === 'register'
-        ? 'Account created. You are signed in for this browser session.'
-        : 'Signed in successfully for this browser session.', true);
+      window.location.assign('/dashboard');
     } catch (error) {
       setMessage(form, error.message);
     } finally {
@@ -100,7 +98,7 @@ document.querySelectorAll('[data-mobile-auth]').forEach((form) => {
         pass: form.elements.pass.value.trim(),
       });
       saveAuthentication(result);
-      setMessage(form, 'Mobile verified. You are signed in for this browser session.', true);
+      window.location.assign('/dashboard');
     } catch (error) {
       setMessage(form, error.message);
     } finally {

@@ -1,0 +1,158 @@
+.dashboard-layout {
+  width: min(100% - 32px, 860px);
+  margin: 0 auto;
+  padding: 28px 0 24px;
+}
+
+.dashboard-header,
+.items-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-header {
+  margin-bottom: 25px;
+}
+
+.dashboard-header .brand {
+  margin: 0 0 0 4px;
+  text-decoration: none;
+}
+
+.sign-out {
+  width: auto;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 16px;
+}
+
+.dashboard-card {
+  margin-bottom: 18px;
+  padding: 30px 34px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(3, 10, 29, 0.22);
+}
+
+.dashboard-card h1 {
+  margin-bottom: 8px;
+}
+
+.management-card h2 {
+  margin: 7px 0 0;
+  color: #131b2e;
+  font-size: 20px;
+}
+
+.management-card .section-hint {
+  margin: 7px 0 14px;
+}
+
+.dashboard-card .intro {
+  margin-bottom: 20px;
+}
+
+.dashboard-message {
+  margin: 12px 0 0;
+  color: #687286;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.account-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 22px 0 0;
+}
+
+.account-details div {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f7f8fc;
+}
+
+.account-details dt {
+  margin-bottom: 6px;
+  color: #687286;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.account-details dd {
+  margin: 0;
+  color: #202a3f;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.account-details .contact-status {
+  margin-top: 5px;
+  color: #687286;
+  font-size: 11px;
+}
+
+.auth-form select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #dce1ea;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+  font-size: 14px;
+}
+
+.auth-form select:focus {
+  border-color: #6878e5;
+  outline: 3px solid rgba(104, 120, 229, 0.14);
+}
+
+.contact-verify-form[hidden],
+[data-contact-request-form] [hidden] {
+  display: none;
+}
+
+.items-card h2 {
+  margin: 7px 0 0;
+  color: #131b2e;
+  font-size: 20px;
+}
+
+.item-count {
+  color: #687286;
+  font-size: 12px;
+}
+
+.item-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-list li {
+  padding: 13px 15px;
+  border: 1px solid #e8ebf1;
+  border-radius: 8px;
+  color: #202a3f;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .dashboard-layout {
+    width: min(100% - 24px, 860px);
+    padding-top: 22px;
+  }
+
+  .dashboard-card {
+    padding: 25px 22px;
+  }
+}

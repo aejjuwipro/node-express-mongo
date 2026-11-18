@@ -5,6 +5,7 @@ const safeUser = (user) => ({
   id: user.id,
   name: user.name || null,
   email: user.email || null,
+  emailVerified: Boolean(user.emailVerifiedAt),
   mobile: user.mobile || null,
   mobileVerified: Boolean(user.mobileVerifiedAt),
 });
