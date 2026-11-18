@@ -1,6 +1,6 @@
 # Node Users
 
-Node Users is an Express and MongoDB user application with email/password authentication, a development-only mobile OTP flow, profile management, and browser login and registration pages.
+Node Users is an Express and MongoDB user application with email/password authentication, development-only OTP/contact verification, editable profile names and contacts, authenticated password changes, and browser login and registration pages.
 
 ## Start here
 
@@ -8,6 +8,7 @@ Node Users is an Express and MongoDB user application with email/password authen
 2. Open the UI:
    - Login: <http://localhost:3001/login>
    - Registration: <http://localhost:3001/registration>
+   - After signing in, the app opens the dashboard at <http://localhost:3001/dashboard>.
 3. Read the [milestone history and correction log](docs/milestones.md) before changing previously troublesome configuration.
 4. Follow the [project SDLC](docs/project-sdlc.md) for implementation and verification expectations.
 
@@ -33,8 +34,16 @@ Node Users is an Express and MongoDB user application with email/password authen
 | `GET` | `/auth/me` | Return the authenticated account |
 | `GET` | `/users/me` | Read the authenticated profile |
 | `PATCH` | `/users/me` | Update the authenticated user's name |
+| `PATCH` | `/users/me/password` | Change password after verifying the current password |
+| `POST` | `/users/me/contact-verification/request` | Request a mock email/mobile verification code |
+| `POST` | `/users/me/contact-verification/verify` | Verify a contact change and update the account |
+| `GET` | `/health/live` | Check that the Node process is running |
+| `GET` | `/health/ready` | Check that MongoDB is reachable and the app can serve traffic |
+| `GET` | `/metrics` | Prometheus-format HTTP request and Node.js process metrics |
 
-Mobile OTP delivery is currently a mock: the generated pass is returned in the API response for development and is not sent by SMS. Do not use this provider for production. See [Quickstart](docs/quickstart.md) for request examples and [Milestones](docs/milestones.md) for known corrections.
+Use `/health/live` for liveness checks and `/health/ready` for readiness checks. Prometheus can scrape `/metrics` for HTTP request counts/latency and process uptime/memory. Metrics are process-local and reset on restart; keep the unauthenticated metrics endpoint on a trusted network.
+
+Mobile OTP and contact verification use development mocks: the generated code is returned to the dashboard/API and is not sent by SMS or email. Contact verification codes expire after five minutes, have a 60-second resend cooldown, and are limited to five attempts. Do not use these providers for production. See [Quickstart](docs/quickstart.md) for setup and [Milestones](docs/milestones.md) for known corrections.
 
 ## Contributions and changes
 

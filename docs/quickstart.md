@@ -18,6 +18,7 @@
    - Set unique MongoDB and Mongo Express usernames/passwords.
    - Replace `JWT_SECRET` with at least 32 bytes of random data. For example, run `openssl rand -hex 32` and paste its output into `.env`.
    - Keep `OTP_PROVIDER=mock` for local development.
+   - Set `DEBUG=true` to log each HTTP request's method, path, status, and duration; use `DEBUG=false` to turn these logs off. Debug logging is off by default and does not record request bodies or headers.
    - Use URI-safe characters in `MONGO_USER` and `MONGO_PASS`; Compose interpolates them directly into the MongoDB URI.
 3. Build and start the services:
 
@@ -33,6 +34,7 @@
    ```
 
    Wait for both `Connected to MongoDB` and `Server running on port 3001` in the app logs.
+   `docker compose ps` should show the app as `healthy` after its readiness check succeeds.
 
 ## URLs and ports
 
@@ -41,8 +43,14 @@
 | Express app | <http://localhost:3001> | `3001` |
 | Login UI | <http://localhost:3001/login> | `3001` |
 | Registration UI | <http://localhost:3001/registration> | `3001` |
+| Account dashboard (after sign-in) | <http://localhost:3001/dashboard> | `3001` |
+| Liveness check | <http://localhost:3001/health/live> | `3001` |
+| Readiness check | <http://localhost:3001/health/ready> | `3001` |
+| Prometheus metrics | <http://localhost:3001/metrics> | `3001` |
 | Mongo Express | <http://localhost:8082> | `8081` |
 | MongoDB | `localhost:27017` | `27017` |
+
+After signing in, use the dashboard to edit your name, verify a new email/mobile contact, or change your password. Contact verification is mock-only: the code appears in the dashboard and is not sent by email or SMS. Codes expire after five minutes, have a 60-second resend cooldown, and allow five verification attempts. Password changes require the current password and an 8-character minimum; mobile-only accounts continue to sign in with OTP.
 
 Mongo Express uses the `ME_USER` and `ME_PASS` values from `.env`. The application connects to MongoDB by the Compose service name `mongo`; do not change its in-container hostname to `localhost`.
 

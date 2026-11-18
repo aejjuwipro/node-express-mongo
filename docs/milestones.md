@@ -11,6 +11,9 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `ed43277` | Mobile OTP and profile management | Added mock OTP registration/login, OTP attempt/expiry/cooldown controls, and authenticated profile read/update. |
 | `cfd233d` | Browser login and registration | Added `/login` and `/registration`, shared styling/client code, and email/mobile forms. |
 | `b40106a` | Application/infrastructure separation | Split startup, configuration, infrastructure, models, middleware, routes, and Express app wiring. |
+| `254674f` | Fresh MongoDB startup and verification persistence | Create the user collection before index migration and prepare expiring contact verification storage. |
+| `585bdce` | Configurable debug logging and observability | Add the `DEBUG` switch, Prometheus metrics, health endpoints, and Docker readiness checks. |
+| `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
 
 ## Corrections to retain
 
@@ -38,20 +41,33 @@ This log records the implemented milestones, their commits, and fixes that shoul
 - **Failure:** The API worked, but `/login` and `/registration` had no corresponding browser pages.
 - **Correction:** Express now serves the HTML routes and static files from `public/`.
 - **Do not repeat:** When adding a page, verify its exact route, assets, and HTTP content type on the host port `3001`; an API health response at `/` does not prove that UI routes work.
+- Successful email registration/login and mobile OTP sign-in redirect to `/dashboard`. The dashboard requires the browser-session token and returns users without one to `/login`.
 
 ### OTP behavior
 
 - **Correction:** The OTP mock accepts E.164 numbers, returns its development pass, stores only a keyed hash, expires challenges after five minutes, enforces a 60-second resend cooldown and five attempts, and consumes successful challenges.
 - **Do not repeat:** The returned pass is intentionally for development only. Do not expose it when implementing a real SMS gateway; the UI warning and response warning must remain consistent with the provider.
+- Authenticated email/mobile changes use separate, hashed, expiring contact-verification challenges. Existing contact values remain unchanged until the new contact is verified. Challenges are single-use, expire after five minutes, enforce a 60-second resend cooldown and five attempts, and reject contacts owned by another account.
+- Both contact delivery channels are currently mock-only; the dashboard displays the code and no email/SMS is sent. Replace the mock delivery service before using contact verification in production.
+- Password changes require the current password and enforce the same 8-character minimum and 72-byte maximum as registration.
+
+### Debugging and observability
+
+- Set `DEBUG=true` in `.env` to log HTTP method, path, status, and duration; `DEBUG=false` disables these logs. The default is off, and request bodies/headers are not logged.
+- `/health/live` checks process liveness, `/health/ready` checks MongoDB reachability, and `/metrics` exposes Prometheus-format request and process metrics.
+- Compose marks the app healthy using `/health/ready`. Metrics are in-memory and reset on process restart; restrict the unauthenticated metrics endpoint to a trusted network.
 
 ### Startup and database indexes
 
 - **Correction:** The server connects to MongoDB and prepares required indexes before listening. The user email index is migrated from the earlier non-sparse unique form so mobile-only accounts can be stored.
+- **Failure:** On a fresh database, startup failed with `NamespaceNotFound` while reading indexes because MongoDB had not created the `users` collection yet.
+- **Correction:** Check for the collection and create it before inspecting or migrating its indexes. Index creation and the server listener can then proceed on an empty database.
 - **Do not repeat:** A live TCP port alone is not proof of readiness. Check the app logs for both MongoDB connection and server listener messages. Preserve existing user data when changing indexes; do not drop the MongoDB volume as a workaround.
 
 ## Expected status checks
 
 - `GET /`, `GET /login`, and `GET /registration` should return `200`.
+- `GET /dashboard`, `/health/live`, and `/health/ready` should return `200` when the app is ready; `/metrics` should return Prometheus text.
 - `GET /auth/me` without a bearer token should return `401`; that is expected authorization behavior, not a port failure.
-- `GET /users/me` requires `Authorization: Bearer <token>`.
+- `/users/me` and its profile, password, and contact-verification actions require `Authorization: Bearer <token>`.
 - Mongo Express is protected by its configured basic-auth credentials; an unauthenticated response is not evidence that the container port is wrong.
