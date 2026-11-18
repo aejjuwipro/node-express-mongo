@@ -14,6 +14,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `254674f` | Fresh MongoDB startup and verification persistence | Create the user collection before index migration and prepare expiring contact verification storage. |
 | `585bdce` | Configurable debug logging and observability | Add the `DEBUG` switch, Prometheus metrics, health endpoints, and Docker readiness checks. |
 | `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
+| Pending | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
 
 ## Corrections to retain
 
@@ -56,6 +57,11 @@ This log records the implemented milestones, their commits, and fixes that shoul
 - Set `DEBUG=true` in `.env` to log HTTP method, path, status, and duration; `DEBUG=false` disables these logs. The default is off, and request bodies/headers are not logged.
 - `/health/live` checks process liveness, `/health/ready` checks MongoDB reachability, and `/metrics` exposes Prometheus-format request and process metrics.
 - Compose marks the app healthy using `/health/ready`. Metrics are in-memory and reset on process restart; restrict the unauthenticated metrics endpoint to a trusted network.
+- OpenTelemetry exports spans/metrics/logs by OTLP to the Collector. Prometheus scrapes Collector metrics, Tempo stores traces, Loki stores logs, and Grafana provisions the three data sources and the Node Users dashboard.
+- For local Compose, Grafana listens on `127.0.0.1:3002` (host port 3000 was already occupied), Prometheus on `127.0.0.1:9090`; Collector, Loki, and Tempo are internal-only. Change the Grafana default credentials before use outside a local trusted environment.
+- **Failure:** Application logs appeared in container stdout but Loki had no records because the app used the separate `@opentelemetry/api-logs` global API instead of the API package used by the SDK.
+- **Correction:** Import `logs` and `SeverityNumber` from `@opentelemetry/api`, configure `BatchLogRecordProcessor` with its exporter option, then confirm Loki entries include trace IDs that resolve in Tempo.
+- **Do not repeat:** Seeing stdout logs does not prove OTLP log export is working; verify records in Loki and trace/log correlation end to end.
 
 ### Startup and database indexes
 
@@ -68,6 +74,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 
 - `GET /`, `GET /login`, and `GET /registration` should return `200`.
 - `GET /dashboard`, `/health/live`, and `/health/ready` should return `200` when the app is ready; `/metrics` should return Prometheus text.
+- In Compose, the Prometheus `otel-collector` target should be `UP`; generated traces and logs should appear in Tempo and Loki, respectively.
 - `GET /auth/me` without a bearer token should return `401`; that is expected authorization behavior, not a port failure.
 - `/users/me` and its profile, password, and contact-verification actions require `Authorization: Bearer <token>`.
 - Mongo Express is protected by its configured basic-auth credentials; an unauthenticated response is not evidence that the container port is wrong.

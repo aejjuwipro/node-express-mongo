@@ -3,6 +3,7 @@ const User = require('../models/user');
 const OtpChallenge = require('../models/otp-challenge');
 const ContactVerification = require('../models/contact-verification');
 const config = require('../config/environment');
+const logger = require('../utils/logger');
 
 const connectDatabase = async () => {
   await mongoose.connect(config.mongoUri);
@@ -26,7 +27,7 @@ const connectDatabase = async () => {
   await OtpChallenge.init();
   await ContactVerification.init();
 
-  console.log('Connected to MongoDB');
+  logger.info('Connected to MongoDB');
 };
 
 module.exports = { connectDatabase };

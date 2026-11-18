@@ -51,7 +51,10 @@ app.use('/items', itemRoutes);
 app.use(observabilityRoutes);
 
 app.use((err, req, res, next) => {
-  console.error('Request error:', err);
+  logger.error('Request failed', {
+    error_type: err.name,
+    status_code: err.statusCode || 500,
+  });
   res.status(500).json({ error: 'Internal server error' });
 });
 

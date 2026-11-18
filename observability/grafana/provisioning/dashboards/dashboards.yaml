@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Node Users
+    orgId: 1
+    folder: Node Users
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

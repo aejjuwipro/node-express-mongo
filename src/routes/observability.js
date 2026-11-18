@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { renderMetrics } = require('../observability/metrics');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/health/ready', async (req, res) => {
     await mongoose.connection.db.admin().ping();
     return res.set('Cache-Control', 'no-store').json({ status: 'ready' });
   } catch (error) {
-    console.error('Readiness check failed:', error);
+    logger.error('Readiness check failed', { error_type: error.name });
     return res.status(503).set('Cache-Control', 'no-store').json({ status: 'not_ready' });
   }
 });

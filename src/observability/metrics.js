@@ -1,3 +1,5 @@
+const { metrics } = require('@opentelemetry/api');
+
 const methodLabels = new Set([
   'GET',
   'HEAD',
@@ -12,11 +14,36 @@ const methodLabels = new Set([
 const durationBuckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
 const requestCounts = new Map();
 const requestDurations = new Map();
+const meter = metrics.getMeter('node-users');
+const httpRequestCounter = meter.createCounter('node_users_http_requests', {
+  description: 'Completed HTTP requests, excluding metrics scrapes.',
+  unit: '{request}',
+});
+const httpRequestDuration = meter.createHistogram('node_users_http_request_duration', {
+  description: 'HTTP request duration.',
+  unit: 's',
+});
+
+meter.createObservableGauge('node_users_process_memory_rss', {
+  description: 'Resident memory used by the Node.js process.',
+  unit: 'By',
+}).addCallback((result) => result.observe(process.memoryUsage.rss()));
+meter.createObservableGauge('node_users_process_heap_used', {
+  description: 'Heap memory used by the Node.js process.',
+  unit: 'By',
+}).addCallback((result) => result.observe(process.memoryUsage().heapUsed));
+meter.createObservableGauge('node_users_process_uptime', {
+  description: 'Node.js process uptime.',
+  unit: 's',
+}).addCallback((result) => result.observe(process.uptime()));
 
 const normalizeMethod = (method) => (methodLabels.has(method) ? method : 'OTHER');
 
 const recordRequest = (method, statusCode, durationSeconds) => {
   const methodLabel = normalizeMethod(method);
+  const attributes = { method: methodLabel, status_code: String(statusCode) };
+  httpRequestCounter.add(1, attributes);
+  httpRequestDuration.record(durationSeconds, attributes);
   const requestKey = `${methodLabel}|${statusCode}`;
   requestCounts.set(requestKey, (requestCounts.get(requestKey) || 0) + 1);
 
