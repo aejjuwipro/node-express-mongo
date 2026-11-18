@@ -340,7 +340,7 @@ Check Prometheus targets at <http://localhost:9090/targets>. Expected jobs inclu
 
 ## 7. Verification and release gates
 
-The multi-stage Java Docker build runs Maven tests for the selected module. Before a release:
+The multi-stage Java Docker build runs Maven tests for the selected module. The root Jenkins pipeline runs Compose/Node validation, builds the Node and Java images, and performs an isolated end-to-end smoke test including Java-to-Node token interoperability and Prometheus targets. Its disposable environment is defined in `ci/compose.env` and `ci/docker-compose.ci.yml`; it uses separate ports, project-scoped volumes, and removes only those volumes after the run. Before a release:
 
 1. Run `docker compose config --quiet`.
 2. Build both Java modules so the Maven test suite runs.
@@ -360,3 +360,4 @@ The multi-stage Java Docker build runs Maven tests for the selected module. Befo
 - Local mock OTP disclosure and Mailpit are for development only.
 - Shared Node/Java identity storage means schema/index/secret changes must be coordinated.
 - Add provider contract tests, rate limiting, production secrets management, automated security testing, and deployment-specific SLOs before production launch.
+- CI validates and builds locally but does not publish to a registry. Select an approved registry and configure its credentials outside source control before adding immutable-image promotion.

@@ -133,3 +133,17 @@ docker compose down
 `docker compose down` preserves the named MongoDB data volume. Avoid deleting that volume unless you intentionally want to erase local database data.
 
 For failure checks and previously corrected configuration errors, see [Milestones and correction log](milestones.md).
+
+## CI with Jenkins
+
+The root [Jenkinsfile](../Jenkinsfile) is the CI entry point. Configure a Jenkins **Multibranch Pipeline** or **Pipeline from SCM** job to load this repository's `Jenkinsfile`. The Jenkins agent must have:
+
+- Node.js 20 or later.
+- Docker Engine and Docker Compose v2.24 or later, with access to the daemon.
+- For the optional deployment stage only: Ansible and the `ansible.posix` collection.
+
+The pipeline validates Compose and Node syntax, builds the application and Java images (the Java Docker builds run Maven tests), then starts a separate full Compose stack on CI-only loopback ports. Its smoke test checks service health, gateway routes, mobile OTP single-use, Java-issued JWT acceptance by Node, and Prometheus scrape targets. Post-build cleanup removes only the CI project's containers, network, and named volumes.
+
+`ci/compose.env` contains deliberately disposable fixture values. They are not production credentials and must never be copied into `.env` or used for deployment. No cloud account, registry, SMS subscription, or paid CI service is required for these checks. CI does require Docker daemon access, which is equivalent to host-level control; only run trusted pipeline code on a dedicated, access-controlled Jenkins agent.
+
+The `DEPLOY` Jenkins parameter is off by default and only deploys from the `main` branch when explicitly enabled. Configure the `node-users-deploy-key` SSH credential in Jenkins; keep the actual host inventory in the ignored `ansible/inventory/production.ini`. Deployment does not provision cloud infrastructure or publish images to a registry.

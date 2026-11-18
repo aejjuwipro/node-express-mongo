@@ -1,6 +1,6 @@
 # Project SDLC
 
-This document defines the lightweight development lifecycle for this repository. It reflects the current Docker-based Node.js and Java project and does not assume a CI pipeline is configured. The Java service's detailed architecture, API contracts, diagrams, provider caveats, and operations are documented in [Java Registration SDLC and architecture](java-registration-sdlc.md).
+This document defines the lightweight development lifecycle for this repository. It reflects the current Docker-based Node.js and Java project. A Jenkins declarative pipeline is provided in the repository root; the Java service's detailed architecture, API contracts, diagrams, provider caveats, and operations are documented in [Java Registration SDLC and architecture](java-registration-sdlc.md).
 
 ## 1. Scope and requirements
 
@@ -29,6 +29,7 @@ This document defines the lightweight development lifecycle for this repository.
 - Keep the OTP mock clearly marked as development-only. A real SMS provider must be introduced as an infrastructure adapter and must not return OTP values to clients.
 - Update `package.json` and `package-lock.json` together when direct dependencies change.
 - Use small, milestone-focused commits with a clear message.
+- Keep CI credentials and deployment inventories in Jenkins credentials or ignored local files; checked-in CI values are disposable test fixtures only.
 
 ## 4. Verification gates
 
@@ -59,7 +60,9 @@ Before calling a code milestone complete:
 5. For authentication changes, verify both success and failure cases, including invalid input, OTP replay/expiry behavior, and authenticated profile access.
 6. Confirm the working tree contains no `.env` or other secrets before committing.
 
-For Java changes, also rebuild both modules (`docker compose up -d --build registration-service api-gateway`), check their health and Prometheus targets, and test the relevant registration/verification flow. The Docker build executes Maven tests.
+The [Jenkinsfile](../Jenkinsfile) validates Compose and Node syntax, builds the Node/Java images (Java Maven tests run inside those builds), then starts an isolated Compose project and checks health, route behavior, OTP single-use, Java-to-Node JWT interoperability, and Prometheus targets. It tears down only its uniquely named CI volumes. Jenkins agents need Node.js 20+, Docker Engine access, and Docker Compose v2.24+; Docker daemon access is privileged and should be restricted to trusted repositories.
+
+For Java changes, also rebuild both modules (`docker compose up -d --build registration-service api-gateway`), check their health and Prometheus targets, and test the relevant registration/verification flow.
 
 Documentation-only changes do not require a Docker rebuild. Update the quickstart and correction log whenever setup steps or known failure modes change.
 
@@ -75,4 +78,4 @@ Documentation-only changes do not require a Docker rebuild. Update the quickstar
 - Replace the mock OTP adapter with a real SMS gateway before production deployment.
 - Add production hardening (rate limiting, secure token/session policy, TLS, least-privilege network exposure, and operational health checks) before exposing the service publicly.
 - Validate the Airtel tenant API/authentication/payload mapping and secure Kafka/Redis before production use.
-- Add automated tests/CI when the project adopts a test runner and pipeline.
+- Add Node unit tests and CI image signing/publishing when a trusted registry and its credentials are selected.

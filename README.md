@@ -12,6 +12,7 @@ Node Users is an Express and MongoDB user application with email/password authen
 3. Read the [milestone history and correction log](docs/milestones.md) before changing previously troublesome configuration.
 4. Follow the [project SDLC](docs/project-sdlc.md) for implementation and verification expectations.
 5. See the [Java Registration SDLC and architecture](docs/java-registration-sdlc.md) for requirements, HLD/LLD, flows, diagrams, operations, and production caveats.
+6. See [CI with Jenkins](docs/quickstart.md#ci-with-jenkins) for the automated build/smoke-test pipeline and optional deployment controls.
 
 ## Application structure
 
@@ -51,6 +52,8 @@ Use `/health/live` for liveness checks and `/health/ready` for readiness checks.
 The gateway is available at <http://localhost:3003>. It routes `/auth/**` to Java and `/node/**` to the Node API after removing the `/node` prefix. Java registration supports email verification and mobile OTP; the default local SMS provider exposes a mock code, and email is captured by Mailpit at <http://localhost:8025>. Java-created verified accounts share the Node MongoDB `users` collection and JWT signing secret.
 
 Build/restart the Java services with `docker compose up -d --build registration-service api-gateway`. See [Java Registration SDLC and architecture](docs/java-registration-sdlc.md) before configuring providers. The Airtel adapter is configurable but not validated against a real Airtel tenant contract; do not enable production delivery until the tenant API/authentication/payload requirements are confirmed.
+
+The root [Jenkinsfile](Jenkinsfile) provides CI validation, image builds, full Compose smoke checks, and an opt-in Ansible deployment stage. CI-only static values live in `ci/compose.env`; they must never be used for deployment.
 
 ## Monitoring and observability
 

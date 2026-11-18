@@ -1,0 +1,36 @@
+services:
+  app:
+    container_name: node-users-ci-app-${BUILD_NUMBER:-local}
+    ports: !override
+      - "127.0.0.1:13001:3001"
+    volumes: !reset []
+
+  mongo:
+    container_name: node-users-ci-mongo-${BUILD_NUMBER:-local}
+    ports: !override
+      - "127.0.0.1:12717:27017"
+
+  mongo-express:
+    container_name: node-users-ci-mongo-express-${BUILD_NUMBER:-local}
+    ports: !override
+      - "127.0.0.1:13082:8081"
+
+  registration-service:
+    container_name: node-users-ci-registration-${BUILD_NUMBER:-local}
+
+  api-gateway:
+    container_name: node-users-ci-gateway-${BUILD_NUMBER:-local}
+    ports: !override
+      - "127.0.0.1:13003:8081"
+
+  mailpit:
+    ports: !override
+      - "127.0.0.1:18025:8025"
+
+  prometheus:
+    ports: !override
+      - "127.0.0.1:19090:9090"
+
+  grafana:
+    ports: !override
+      - "127.0.0.1:13002:3000"
