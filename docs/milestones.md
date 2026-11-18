@@ -15,7 +15,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `585bdce` | Configurable debug logging and observability | Add the `DEBUG` switch, Prometheus metrics, health endpoints, and Docker readiness checks. |
 | `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
 | `2f40bc0` | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
-| Pending commit | Java registration microservice and API Gateway | Add email/mobile registration, Redis HMAC challenges, Kafka notification delivery, Mailpit, configurable SMS adapter, Java observability, and architecture/SDLC documentation. |
+| `530bd64` | Java registration microservice and API Gateway | Add email/mobile registration, Redis HMAC challenges, Kafka notification delivery, Mailpit, configurable SMS adapter, Java observability, and architecture/SDLC documentation. |
 
 ## Corrections to retain
 
