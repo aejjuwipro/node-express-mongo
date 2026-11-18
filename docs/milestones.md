@@ -16,7 +16,8 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
 | `2f40bc0` | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
 | `530bd64` | Java registration microservice and API Gateway | Add email/mobile registration, Redis HMAC challenges, Kafka notification delivery, Mailpit, configurable SMS adapter, Java observability, and architecture/SDLC documentation. |
-| Pending commit | Jenkins CI pipeline | Validate Compose and Node source, build/test Node and Java images, then smoke-test an isolated full stack, OTP replay protection, shared JWT interoperability, and Prometheus. |
+| `24c2617` | Jenkins CI pipeline | Validate Compose and Node source, build/test Node and Java images, then smoke-test an isolated full stack, OTP replay protection, shared JWT interoperability, and Prometheus. |
+| Pending commit | Ansible host deployment | Synchronize source without secrets, validate remote Compose configuration, build/start the full stack, and verify Node/Gateway readiness while preserving data volumes. |
 
 ## Corrections to retain
 

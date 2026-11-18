@@ -353,7 +353,31 @@ The multi-stage Java Docker build runs Maven tests for the selected module. The 
 9. Test Airtel only with an authorized tenant and its documented contract; a mock HTTP test only validates the configurable adapter's current mapping, not live Airtel compatibility.
 10. Review `git status`; do not commit `.env`, runtime secrets, or generated test accounts.
 
-## 8. Known limitations and follow-up
+## 8. CI/CD and host deployment
+
+Jenkins CI is defined by the root `Jenkinsfile`. A configured Pipeline-from-SCM or Multibranch Pipeline job runs the checked-in pipeline on an agent with Node.js, Docker Engine/Compose, and access to a Docker daemon. The optional deployment stage uses Ansible only when explicitly selected on `main`; the agent needs Ansible and the stage installs the pinned `ansible.posix` collection.
+
+The Ansible playbook targets a pre-provisioned host and uses rsync to transfer the checked-out application source. It excludes environment files and build/dependency directories, validates the host's `.env`, runs Compose build/up, and checks application/gateway readiness. It preserves Docker volumes. The target host, `.env`, SSH key, and firewall are managed by the operator. Terraform is intentionally not included: no cloud provider, account, network design, or budget was selected, and the existing Compose deployment does not require cloud provisioning.
+
+```mermaid
+flowchart LR
+    SCM[Source repository]
+    Jenkins[Jenkins pipeline]
+    Validate[Compose and Node validation]
+    Build[Docker image build and Java tests]
+    CI[Isolated Compose test stack]
+    Smoke[OTP, JWT, routes, metrics smoke checks]
+    Approval[Manual DEPLOY opt-in on main]
+    Ansible[Ansible over verified SSH]
+    Host[Existing Docker host]
+
+    SCM --> Jenkins --> Validate --> Build --> CI --> Smoke
+    Smoke -->|pass| Approval -->|enabled| Ansible --> Host
+```
+
+The pipeline intentionally does not publish images: no trusted registry or registry credentials were selected. The Ansible release path transfers source and rebuilds on the target host; use an approved image registry and immutable tags if artifact promotion is required.
+
+## 9. Known limitations and follow-up
 
 - Airtel request fields/authentication are tenant-configurable assumptions, not a certified Airtel integration.
 - Kafka/Redis local topology is single-node and does not model production availability, replication, security, or retention policy.
@@ -361,3 +385,4 @@ The multi-stage Java Docker build runs Maven tests for the selected module. The 
 - Shared Node/Java identity storage means schema/index/secret changes must be coordinated.
 - Add provider contract tests, rate limiting, production secrets management, automated security testing, and deployment-specific SLOs before production launch.
 - CI validates and builds locally but does not publish to a registry. Select an approved registry and configure its credentials outside source control before adding immutable-image promotion.
+- The Ansible deployment host must already have Docker Engine/Compose, rsync, SSH access, and a protected `.env`; provisioning and firewall management are outside the playbook's scope.

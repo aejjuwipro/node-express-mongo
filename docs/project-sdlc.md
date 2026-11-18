@@ -62,6 +62,8 @@ Before calling a code milestone complete:
 
 The [Jenkinsfile](../Jenkinsfile) validates Compose and Node syntax, builds the Node/Java images (Java Maven tests run inside those builds), then starts an isolated Compose project and checks health, route behavior, OTP single-use, Java-to-Node JWT interoperability, and Prometheus targets. It tears down only its uniquely named CI volumes. Jenkins agents need Node.js 20+, Docker Engine access, and Docker Compose v2.24+; Docker daemon access is privileged and should be restricted to trusted repositories.
 
+The pipeline's optional `DEPLOY` stage is gated to the `main` branch and requires explicit opt-in. It invokes [Ansible](../ansible/deploy.yml) with a host inventory and SSH key supplied outside source control. The playbook deploys to an existing Docker host; it does not provision infrastructure, install Docker, expose cloud resources, or remove persistent Compose volumes.
+
 For Java changes, also rebuild both modules (`docker compose up -d --build registration-service api-gateway`), check their health and Prometheus targets, and test the relevant registration/verification flow.
 
 Documentation-only changes do not require a Docker rebuild. Update the quickstart and correction log whenever setup steps or known failure modes change.
@@ -79,3 +81,4 @@ Documentation-only changes do not require a Docker rebuild. Update the quickstar
 - Add production hardening (rate limiting, secure token/session policy, TLS, least-privilege network exposure, and operational health checks) before exposing the service publicly.
 - Validate the Airtel tenant API/authentication/payload mapping and secure Kafka/Redis before production use.
 - Add Node unit tests and CI image signing/publishing when a trusted registry and its credentials are selected.
+- Select a cloud provider and approved Terraform modules only if cloud provisioning becomes a requirement; do not check in fake provider credentials or deployable placeholder infrastructure.

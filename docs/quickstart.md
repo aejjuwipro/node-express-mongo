@@ -136,14 +136,32 @@ For failure checks and previously corrected configuration errors, see [Milestone
 
 ## CI with Jenkins
 
-The root [Jenkinsfile](../Jenkinsfile) is the CI entry point. Configure a Jenkins **Multibranch Pipeline** or **Pipeline from SCM** job to load this repository's `Jenkinsfile`. The Jenkins agent must have:
+The root [Jenkinsfile](../Jenkinsfile) is the CI entry point. Configure a Jenkins **Multibranch Pipeline** or **Pipeline from SCM** job to load this repository's `Jenkinsfile`; configure a webhook or SCM polling on that job if automatic runs on pushes are required. The Jenkins installation needs the Pipeline and Git plugins. For the gated deploy stage, also install Credentials Binding and SSH Credentials. The Jenkins agent must have:
 
 - Node.js 20 or later.
 - Docker Engine and Docker Compose v2.24 or later, with access to the daemon.
-- For the optional deployment stage only: Ansible and the `ansible.posix` collection.
+- For the optional deployment stage only: Ansible; the stage installs the pinned `ansible.posix` collection.
 
-The pipeline validates Compose and Node syntax, builds the application and Java images (the Java Docker builds run Maven tests), then starts a separate full Compose stack on CI-only loopback ports. Its smoke test checks service health, gateway routes, mobile OTP single-use, Java-issued JWT acceptance by Node, and Prometheus scrape targets. Post-build cleanup removes only the CI project's containers, network, and named volumes.
+The agent workspace must be available to its Docker daemon at the same absolute path because the Compose stack uses bind-mounted configuration files. The pipeline validates Compose and Node syntax, builds the application and Java images (the Java Docker builds run Maven tests), then starts a separate full Compose stack on CI-only loopback ports. Its smoke test checks service health, gateway routes, mobile OTP single-use, Java-issued JWT acceptance by Node, and Prometheus scrape targets. Post-build cleanup removes only the CI project's containers, network, and named volumes.
 
 `ci/compose.env` contains deliberately disposable fixture values. They are not production credentials and must never be copied into `.env` or used for deployment. No cloud account, registry, SMS subscription, or paid CI service is required for these checks. CI does require Docker daemon access, which is equivalent to host-level control; only run trusted pipeline code on a dedicated, access-controlled Jenkins agent.
 
 The `DEPLOY` Jenkins parameter is off by default and only deploys from the `main` branch when explicitly enabled. Configure the `node-users-deploy-key` SSH credential in Jenkins; keep the actual host inventory in the ignored `ansible/inventory/production.ini`. Deployment does not provision cloud infrastructure or publish images to a registry.
+
+### Ansible host deployment
+
+The Ansible playbook deploys source to an already provisioned Linux host with Docker Compose v2 and `rsync`. It does not install Docker, create a cloud VM, or change firewall rules. Prepare a dedicated remote directory (default: `~/node-users`), create its `.env` from `.env.example`, and edit that file with deployment-specific secrets before running deployment. The playbook transfers source while excluding `.env`, `.env.*`, `.git`, `node_modules`, and Java build output; it validates Compose, builds and starts the stack, then waits for Node and Gateway health. It deliberately does not delete Compose volumes.
+
+Install the required Ansible collection and create an untracked inventory:
+
+```sh
+ansible-galaxy collection install -r ansible/requirements.yml
+cp ansible/inventory/hosts.example.ini ansible/inventory/production.ini
+# Replace the reserved example host with an approved host; configure SSH key access outside the inventory.
+ansible-playbook \
+  -i ansible/inventory/production.ini \
+  --private-key /secure/path/to/deployment-key \
+  ansible/deploy.yml
+```
+
+The example inventory uses the documentation-only address `192.0.2.10` and is not deployable as-is. The SSH user must be able to run Docker commands and the host must already have Docker Engine, Compose v2, and rsync. Keep SSH host-key verification enabled. Never put SSH private keys or production `.env` contents in Git/Jenkinsfile; provide the key through Jenkins credentials or an external secret store. A remote deployment exposes services according to `docker-compose.yml`, so firewall and network policy must be reviewed before use.

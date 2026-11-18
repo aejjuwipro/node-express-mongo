@@ -1,0 +1,120 @@
+---
+- name: Deploy the Node Users Compose stack to an existing Docker host
+  hosts: app_hosts
+  gather_facts: true
+
+  vars:
+    app_deploy_dir: "{{ ansible_env.HOME }}/node-users"
+    compose_project_name: node-users
+
+  tasks:
+    - name: Require a deployment directory below the remote home directory
+      ansible.builtin.assert:
+        that:
+          - app_deploy_dir.startswith(ansible_env.HOME + '/')
+          - app_deploy_dir != ansible_env.HOME + '/'
+        fail_msg: "Set app_deploy_dir to a dedicated child directory of the remote user's home."
+
+    - name: Check Docker Compose is installed for the deployment user
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - version
+      changed_when: false
+
+    - name: Check rsync is installed on the deployment host
+      ansible.builtin.command:
+        argv:
+          - rsync
+          - --version
+      changed_when: false
+
+    - name: Create the application deployment directory
+      ansible.builtin.file:
+        path: "{{ app_deploy_dir }}"
+        state: directory
+        mode: "0750"
+
+    - name: Check for the deployment host's protected environment file
+      ansible.builtin.stat:
+        path: "{{ app_deploy_dir }}/.env"
+      register: deployment_env
+
+    - name: Require a preconfigured deployment environment
+      ansible.builtin.assert:
+        that:
+          - deployment_env.stat.exists
+          - deployment_env.stat.isreg
+        fail_msg: >-
+          Create and configure {{ app_deploy_dir }}/.env on the host first.
+          Runtime secrets are intentionally not copied from the CI workspace.
+
+    - name: Restrict deployment environment file permissions
+      ansible.builtin.file:
+        path: "{{ app_deploy_dir }}/.env"
+        state: file
+        mode: "0600"
+
+    - name: Synchronize application source without repository or environment secrets
+      ansible.posix.synchronize:
+        src: "{{ playbook_dir }}/../"
+        dest: "{{ app_deploy_dir }}/"
+        archive: true
+        rsync_opts:
+          - "--exclude=/.git/"
+          - "--exclude=/.env"
+          - "--exclude=/.env.*"
+          - "--exclude=/node_modules/"
+          - "--exclude=**/target/"
+          - "--exclude=/.copilot/"
+
+    - name: Validate the Compose deployment configuration
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - "{{ compose_project_name }}"
+          - --env-file
+          - .env
+          - config
+          - --quiet
+      args:
+        chdir: "{{ app_deploy_dir }}"
+      changed_when: false
+
+    - name: Build and start the application and supporting services
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - --project-name
+          - "{{ compose_project_name }}"
+          - --env-file
+          - .env
+          - up
+          - --detach
+          - --build
+          - --remove-orphans
+      args:
+        chdir: "{{ app_deploy_dir }}"
+      changed_when: true
+
+    - name: Wait for Node readiness
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3001/health/ready
+        status_code: 200
+      register: node_readiness
+      until: node_readiness.status == 200
+      retries: 30
+      delay: 10
+
+    - name: Wait for the Java API Gateway
+      ansible.builtin.uri:
+        url: http://127.0.0.1:3003/actuator/health
+        status_code: 200
+      register: gateway_readiness
+      until: gateway_readiness.status == 200
+      retries: 30
+      delay: 10
