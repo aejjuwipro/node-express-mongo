@@ -140,17 +140,17 @@ The [Jenkinsfile](../Jenkinsfile) contains CI and an opt-in Ansible deployment s
 
 ### A. Configure Jenkins CI
 
-1. **Open or start a Jenkins controller.** Your current controller is at <http://127.0.0.1:8081/>; go to <http://127.0.0.1:8081/login> and sign in. Skip the startup command if this controller is already running. An unauthenticated request to `/` may return `403`; use the login page rather than treating that response alone as a service outage. To start a new local-only controller instead, create persistent storage and bind its web UI to loopback:
+1. **Open or start a Jenkins controller.** Your current controller is at <http://127.0.0.1:8081/>; go to <http://127.0.0.1:8081/login> and sign in. It already persists Jenkins home in the named volume `local-ai-jenkins_jenkins_home`, mounted at `/var/jenkins_home`; do not create another controller or `jenkins_home` volume for this instance. An unauthenticated request to `/` may return `403`; use the login page rather than treating that response alone as a service outage. To start a separate local-only controller, first confirm the alternate port is free, then create its own volume and bind the web UI to loopback:
 
    ```sh
    docker volume create jenkins_home
    docker run -d --name jenkins-controller --restart unless-stopped \
-     -p 127.0.0.1:8081:8080 \
+     -p 127.0.0.1:8082:8080 \
      -v jenkins_home:/var/jenkins_home \
      jenkins/jenkins:lts-jdk21
    ```
 
-   Then open <http://127.0.0.1:8081>, retrieve the one-time unlock password with `docker exec jenkins-controller cat /var/jenkins_home/secrets/initialAdminPassword`, and complete the setup wizard. Keep the controller private; terminate TLS and enforce authentication if remote access is needed. This controller image is only the control plane; do not give it the Docker socket.
+   Then open <http://127.0.0.1:8082>, retrieve the one-time unlock password with `docker exec jenkins-controller cat /var/jenkins_home/secrets/initialAdminPassword`, and complete the setup wizard. Keep the controller private; terminate TLS and enforce authentication if remote access is needed. This controller image is only the control plane; do not give it the Docker socket.
 2. **Install plugins.** Ensure Jenkins has Pipeline and Git. For optional deployment, add Credentials Binding and SSH Credentials. If Jenkins will launch the build agent over SSH, also install SSH Build Agents.
 3. **Prepare a dedicated Linux agent.** First check whether an existing node has the required tools and a Docker-visible workspace; do not relabel a shared agent unless its owner approves. Otherwise, in **Manage Jenkins → Nodes → New Node**, create a permanent node, set a remote root directory, set its label to exactly `node-users-ci`, and assign one executor. Launch it using your approved SSH or inbound-agent method; configure the corresponding node credential and verify SSH host keys when using SSH. Install Java 21 for Jenkins Remoting, Node.js 20+, Docker Engine, and Docker Compose v2.24+. For deployment, install Ansible and `rsync` too. The agent’s checkout workspace must be visible to its Docker daemon at the same absolute path because Compose bind-mounts configuration files.
 4. **Secure the agent.** Docker daemon access is effectively host-level privilege. Use a dedicated, access-controlled agent, do not expose its Docker socket, and only run trusted repository code. The Jenkins controller and agent may be separate hosts, but the Docker daemon must see the agent workspace path.
