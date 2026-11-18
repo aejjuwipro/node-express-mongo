@@ -20,7 +20,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `b609c6b` | Ansible host deployment | Synchronize source without secrets, validate remote Compose configuration, build/start the full stack, and verify Node/Gateway readiness while preserving data volumes. |
 | `921bcfa` | Jenkins/Ansible quickstart procedures | Document controller/agent setup, CI runs, remote-host preparation, Jenkins secret credentials, manual Ansible deployment, and the protected inventory flow. |
 | `98f4d3e` | Jenkins endpoint and readiness guidance | Match the quickstart to the active local Jenkins port and distinguish an authenticated controller from an unauthenticated 403 response. |
-| Pending commit | Jenkins home persistence clarification | Document the active controller's named home volume and avoid accidentally creating a duplicate controller on the occupied port. |
+| `77ea5c7` | Jenkins home persistence clarification | Document the active controller's named home volume and avoid accidentally creating a duplicate controller on the occupied port. |
 
 ## Corrections to retain
 
