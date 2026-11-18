@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('node:crypto');
+const path = require('node:path');
 const otpService = require('./otp-service');
 
 const app = express();
@@ -18,6 +19,7 @@ if (!JWT_SECRET || Buffer.byteLength(JWT_SECRET, 'utf8') < 32) {
 }
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 const Item = mongoose.model('Item', new mongoose.Schema({ name: String }));
 const userSchema = new mongoose.Schema({
@@ -97,6 +99,14 @@ const requireAuth = async (req, res, next) => {
 
 app.get('/', (req, res) => {
   res.json({ message: 'Express + MongoDB running in Docker on WSL!' });
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/registration', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'registration.html'));
 });
 
 app.post('/auth/register', async (req, res, next) => {

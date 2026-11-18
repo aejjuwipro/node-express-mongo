@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172a">
+  <title>Sign in | Node Users</title>
+  <link rel="stylesheet" href="/auth.css">
+  <script src="/auth.js" defer></script>
+</head>
+<body>
+  <main class="auth-layout">
+    <header class="brand">
+      <span class="brand-mark" aria-hidden="true">N</span>
+      <span>Node Users</span>
+    </header>
+
+    <section class="auth-card" aria-labelledby="page-title">
+      <div class="eyebrow">WELCOME BACK</div>
+      <h1 id="page-title">Sign in to your account</h1>
+      <p class="intro">Use your email and password, or continue with a mobile verification pass.</p>
+
+      <form class="auth-form" data-email-auth="login">
+        <h2>Email sign in</h2>
+        <label for="login-email">Email address</label>
+        <input id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+
+        <button class="primary-button" type="submit">Sign in</button>
+        <p class="form-message" data-status role="status" aria-live="polite"></p>
+      </form>
+
+      <div class="divider"><span>OR</span></div>
+
+      <form class="auth-form mobile-form" data-mobile-auth>
+        <h2>Continue with mobile</h2>
+        <p class="section-hint">Enter an E.164 number, such as +15551234567. New numbers are registered after verification.</p>
+        <label for="login-mobile">Mobile number</label>
+        <input id="login-mobile" name="mobile" type="tel" autocomplete="tel" placeholder="+15551234567" required>
+        <button class="secondary-button" type="button" data-request-otp>Get verification pass</button>
+
+        <div class="otp-fields" data-otp-fields hidden>
+          <label for="login-pass">Six-digit pass</label>
+          <input id="login-pass" name="pass" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
+          <button class="primary-button" type="submit">Verify and sign in</button>
+        </div>
+        <p class="form-message" data-status role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="switch-link">New here? <a href="/registration">Create an account</a></p>
+    </section>
+    <footer>Secure sign-in for your Node Users account</footer>
+  </main>
+</body>
+</html>
