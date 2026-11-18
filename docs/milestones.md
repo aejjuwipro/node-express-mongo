@@ -14,7 +14,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `254674f` | Fresh MongoDB startup and verification persistence | Create the user collection before index migration and prepare expiring contact verification storage. |
 | `585bdce` | Configurable debug logging and observability | Add the `DEBUG` switch, Prometheus metrics, health endpoints, and Docker readiness checks. |
 | `471d59e` | Dashboard account and contact management | Redirect after authentication; allow profile and password updates plus verified email/mobile changes. |
-| Pending | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
+| `2f40bc0` | OpenTelemetry and Grafana stack | Export Node.js traces, metrics, and logs through an OpenTelemetry Collector to Tempo, Prometheus, and Loki; provision Grafana dashboards and data sources. |
 
 ## Corrections to retain
 
