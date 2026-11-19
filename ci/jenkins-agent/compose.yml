@@ -1,0 +1,58 @@
+services:
+  docker:
+    image: docker:29-dind
+    privileged: true
+    restart: unless-stopped
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+      DOCKER_TLS_SAN: DNS:node-users-docker
+    command:
+      - --dns
+      - ${JENKINS_DOCKER_DNS:-10.255.255.254}
+    volumes:
+      - docker-certs:/certs/client
+      - docker-data:/var/lib/docker
+      - agent-work:/home/jenkins/agent
+    networks:
+      jenkins:
+        aliases:
+          - node-users-docker
+    healthcheck:
+      test: ["CMD", "docker", "info"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  agent:
+    build:
+      context: ../..
+      dockerfile: ci/jenkins-agent/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      docker:
+        condition: service_healthy
+    environment:
+      JENKINS_URL: http://jenkins:8080/
+      JENKINS_AGENT_NAME: node-users-ci
+      JENKINS_SECRET: ${JENKINS_AGENT_SECRET:?Set JENKINS_AGENT_SECRET in the local .env file}
+      JENKINS_WEB_SOCKET: "true"
+      JENKINS_AGENT_WORKDIR: /home/jenkins/agent
+      DOCKER_HOST: tcp://node-users-docker:2376
+      DOCKER_TLS_VERIFY: "1"
+      DOCKER_CERT_PATH: /certs/client
+    volumes:
+      - docker-certs:/certs/client:ro
+      - agent-work:/home/jenkins/agent
+    networks:
+      - jenkins
+
+volumes:
+  docker-certs:
+  docker-data:
+  agent-work:
+
+networks:
+  jenkins:
+    external: true
+    name: local-ai-jenkins_jenkins_build

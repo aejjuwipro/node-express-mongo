@@ -56,7 +56,16 @@ pipeline {
                       -f docker-compose.yml -f ci/docker-compose.ci.yml \
                       --project-name "$CI_PROJECT_NAME" up -d
                 '''
-                sh 'node ci/smoke-test.mjs'
+                sh '''
+                    docker compose --env-file ci/compose.env \
+                      -f docker-compose.yml -f ci/docker-compose.ci.yml \
+                      --project-name "$CI_PROJECT_NAME" \
+                      run --rm --no-deps \
+                      -e CI_NODE_URL=http://app:3001 \
+                      -e CI_GATEWAY_URL=http://api-gateway:8081 \
+                      -e CI_PROMETHEUS_URL=http://prometheus:9090 \
+                      --entrypoint node app ci/smoke-test.mjs
+                '''
             }
         }
 

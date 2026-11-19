@@ -69,6 +69,12 @@ This log records the implemented milestones, their commits, and fixes that shoul
 - **Correction:** Import `logs` and `SeverityNumber` from `@opentelemetry/api`, configure `BatchLogRecordProcessor` with its exporter option, then confirm Loki entries include trace IDs that resolve in Tempo.
 - **Do not repeat:** Seeing stdout logs does not prove OTLP log export is working; verify records in Loki and trace/log correlation end to end.
 
+### Jenkins agent and nested Docker
+
+- **Failure:** The Docker-in-Docker agent's build containers inherited public fallback DNS servers, causing intermittent Maven Central connection resets. The Jenkins smoke script also tried the agent container's `127.0.0.1`, which is not the Docker daemon's loopback.
+- **Correction:** Pass the WSL resolver to the nested Docker daemon through `JENKINS_DOCKER_DNS` (default `10.255.255.254`) and run smoke tests in a one-off container on the CI Compose network using service DNS names.
+- **Do not repeat:** Check DNS from inside nested build containers, and do not assume ports bound to Docker-in-Docker loopback are reachable from the Jenkins agent container.
+
 ### Java registration and provider integration
 
 - The Java service is routed through host port `3003`; `/auth/**` goes to Java and `/node/**` reaches Node after stripping the prefix. Node remains on `3001`.
