@@ -21,6 +21,7 @@ This log records the implemented milestones, their commits, and fixes that shoul
 | `921bcfa` | Jenkins/Ansible quickstart procedures | Document controller/agent setup, CI runs, remote-host preparation, Jenkins secret credentials, manual Ansible deployment, and the protected inventory flow. |
 | `98f4d3e` | Jenkins endpoint and readiness guidance | Match the quickstart to the active local Jenkins port and distinguish an authenticated controller from an unauthenticated 403 response. |
 | `77ea5c7` | Jenkins home persistence clarification | Document the active controller's named home volume and avoid accidentally creating a duplicate controller on the occupied port. |
+| `3d2a27d` | Dedicated Jenkins CI agent | Provision the WSL inbound agent and isolated Docker daemon, configure nested DNS/TLS, and run integration checks inside the Compose network. |
 
 ## Corrections to retain
 
